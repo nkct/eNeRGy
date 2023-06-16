@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use macroquad::prelude::*;
 
 const NODE_NUM: u32 = 10;
