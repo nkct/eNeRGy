@@ -1,5 +1,7 @@
 use macroquad::prelude::*;
 
+const NODE_NUM: u32 = 1000;
+
 #[derive(Debug)]
 struct Node {
     x: f64,
@@ -13,6 +15,7 @@ impl From<[f64;2]> for Node {
 }
 impl Node {
     const MAX_DIST: f64 = std::f64::consts::SQRT_2;
+    const MAX_VIXIBLE_DIST: Option<f64> = None;
 
     fn distance(n1: &Node, n2: &Node) -> f64 {
         ((n1.x - n2.x).powi(2) + (n1.y - n2.y).powi(2)).sqrt()
@@ -23,7 +26,15 @@ impl Node {
     }
 
     fn draw_relationship(&self, other: &Node) {
-        let brightness = (Node::MAX_DIST - Node::distance(self, other,)) / Node::MAX_DIST - 0.66;
+        let max_visible_dist;
+        if let Some(value) = Node::MAX_VIXIBLE_DIST  {
+            max_visible_dist = value;
+        } else {
+            max_visible_dist = 1. / 2_f64.powf((NODE_NUM as f64).log10() + 1.);
+        }
+        let relative_dist = (Node::MAX_DIST - Node::distance(self, other,)) / Node::MAX_DIST;
+        let brightness = ((relative_dist - (1. - max_visible_dist)).clamp(0., 1.)) / max_visible_dist;
+
         draw_line(
             self.x as f32 * screen_width(), 
             self.y as f32 * screen_height(), 
@@ -71,7 +82,7 @@ impl Graph {
 #[macroquad::main("eNeRGy")]
 async fn main() {
     //let graph = Graph{ nodes: vec![ Node{ x: 0.05, y: 0.05 }, Node{ x: 0.95, y: 0.95 } ] };
-    let mut graph = Graph::populate_random(50);
+    let mut graph = Graph::populate_random(NODE_NUM);
     loop {
         if is_mouse_button_down(MouseButton::Left) {
             let mouse_pos = (mouse_position().0 / screen_width(), mouse_position().1 / screen_height());
