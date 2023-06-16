@@ -1,16 +1,17 @@
 use macroquad::prelude::*;
 
-const NODE_NUM: u32 = 1000;
+const NODE_NUM: u32 = 10;
 
 #[derive(Debug)]
 struct Node {
     x: f64,
     y: f64,
     size: f32,
+    is_picked_up: bool,
 }
 impl From<[f64;2]> for Node {
     fn from(value: [f64;2]) -> Self {
-        Node { x: value[0], y: value[1], size: 10. }
+        Node { x: value[0], y: value[1], size: 10., is_picked_up: false }
     }
 }
 impl Node {
@@ -77,6 +78,35 @@ impl Graph {
 
         return graph;
     }
+
+    fn handle_dragging(&mut self) {
+        if is_mouse_button_pressed(MouseButton::Left) {
+            let mouse_pos = (mouse_position().0 / screen_width(), mouse_position().1 / screen_height());
+            for node in &mut self.nodes {
+                if (mouse_pos.0 - node.x as f32).powi(2) + (mouse_pos.1 - node.y as f32).powi(2) < (node.size / screen_width() / 2.).powi(2) + 0.0005 {
+                    node.is_picked_up = true;
+                }
+            }
+        }
+
+        if is_mouse_button_released(MouseButton::Left) {
+            for node in &mut self.nodes {
+                if node.is_picked_up {
+                    node.is_picked_up = false;
+                }
+            }
+        }
+
+        if is_mouse_button_down(MouseButton::Left) {
+            let mouse_pos = (mouse_position().0 / screen_width(), mouse_position().1 / screen_height());
+            for node in &mut self.nodes {
+                if node.is_picked_up {
+                    node.x = mouse_pos.0 as f64;
+                    node.y = mouse_pos.1 as f64;
+                }
+            }
+        }
+    }
 }
 
 #[macroquad::main("eNeRGy")]
@@ -84,15 +114,7 @@ async fn main() {
     //let graph = Graph{ nodes: vec![ Node{ x: 0.05, y: 0.05 }, Node{ x: 0.95, y: 0.95 } ] };
     let mut graph = Graph::populate_random(NODE_NUM);
     loop {
-        if is_mouse_button_down(MouseButton::Left) {
-            let mouse_pos = (mouse_position().0 / screen_width(), mouse_position().1 / screen_height());
-            for node in &mut graph.nodes {
-                if (mouse_pos.0 - node.x as f32).powi(2) + (mouse_pos.1 - node.y as f32).powi(2) < (node.size / screen_width() / 2.).powi(2) + 0.0005 {
-                    node.x = mouse_pos.0 as f64;
-                    node.y = mouse_pos.1 as f64;
-                }
-            }
-        }
+        graph.handle_dragging();
 
         graph.draw_relationships();
         graph.draw_nodes();
