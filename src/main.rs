@@ -2,7 +2,7 @@
 
 use macroquad::prelude::*;
 
-const NODE_NUM: u32 = 10;
+const NODE_NUM: u32 = 100;
 
 #[derive(Debug)]
 struct Node {
@@ -13,7 +13,12 @@ struct Node {
 }
 impl From<[f64;2]> for Node {
     fn from(value: [f64;2]) -> Self {
-        Node { x: value[0], y: value[1], size: 10., is_picked_up: false }
+        Node { 
+            x: value[0], 
+            y: value[1], 
+            size: ((1. / NODE_NUM as f32) * (100. * (NODE_NUM as f32).sqrt())), 
+            is_picked_up: false, 
+        }
     }
 }
 impl Node {
@@ -43,7 +48,7 @@ impl Node {
             self.y as f32 * screen_height(), 
             other.x as f32 * screen_width(), 
             other.y as f32 * screen_height(),
-            3., 
+            self.size / 3., 
             [1., 0., 0., brightness as f32].into()
         )
     }
@@ -85,7 +90,7 @@ impl Graph {
         if is_mouse_button_pressed(MouseButton::Left) {
             let mouse_pos = (mouse_position().0 / screen_width(), mouse_position().1 / screen_height());
             for node in &mut self.nodes {
-                if (mouse_pos.0 - node.x as f32).powi(2) + (mouse_pos.1 - node.y as f32).powi(2) < (node.size / screen_width() / 2.).powi(2) + 0.0005 {
+                if (mouse_pos.0 - node.x as f32).powi(2) + (mouse_pos.1 - node.y as f32).powi(2) < (node.size / screen_width() / 2.).powi(2) {
                     node.is_picked_up = true;
                 }
             }
