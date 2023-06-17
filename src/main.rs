@@ -132,6 +132,13 @@ async fn main() {
         graph.draw_relationships();
         graph.draw_nodes();
 
+        if is_mouse_button_pressed(MouseButton::Right) {
+            graph.nodes.push([
+                (mouse_position().0 / screen_width()) as f64,
+                (mouse_position().1 / screen_height()) as f64,
+            ].into())
+        }
+
         next_frame().await
     }
 }
