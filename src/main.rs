@@ -67,7 +67,9 @@ impl Graph {
     fn draw_relationships(&self) {
         for (i, node) in self.nodes.iter().enumerate() {
             for other in &self.nodes[i..=self.nodes.len() - 1] {
-                node.draw_relationship(other)
+                if Node::distance(node, other) < Node::get_max_visible_dist() {
+                    node.draw_relationship(other)
+                }
             }
 
         }
