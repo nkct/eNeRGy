@@ -25,6 +25,17 @@ impl Node {
     const MAX_DIST: f64 = std::f64::consts::SQRT_2;
     const MAX_VIXIBLE_DIST: Option<f64> = None;
 
+    fn get_max_visible_dist() -> f64 {
+        let max_visible_dist;
+        if let Some(value) = Node::MAX_VIXIBLE_DIST  {
+            max_visible_dist = value;
+        } else {
+            max_visible_dist = 1. / 2_f64.powf((NODE_NUM as f64).log10() + 1.);
+        }
+
+        return max_visible_dist;
+    }
+
     fn distance(n1: &Node, n2: &Node) -> f64 {
         ((n1.x - n2.x).powi(2) + (n1.y - n2.y).powi(2)).sqrt()
     }
@@ -34,12 +45,7 @@ impl Node {
     }
 
     fn draw_relationship(&self, other: &Node) {
-        let max_visible_dist;
-        if let Some(value) = Node::MAX_VIXIBLE_DIST  {
-            max_visible_dist = value;
-        } else {
-            max_visible_dist = 1. / 2_f64.powf((NODE_NUM as f64).log10() + 1.);
-        }
+        let max_visible_dist = Node::get_max_visible_dist();
         let relative_dist = (Node::MAX_DIST - Node::distance(self, other,)) / Node::MAX_DIST;
         let brightness = ((relative_dist - (1. - max_visible_dist)).clamp(0., 1.)) / max_visible_dist;
 
