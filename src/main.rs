@@ -5,7 +5,6 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 
 const NODE_NUM: u32 = 100;
-const CHEAP_DRAGGING: bool = false;
 
 #[derive(Debug, Clone, PartialEq)]
 struct Node {
@@ -134,16 +133,32 @@ impl<'a> Graph {
                     self.picked_up = Some(*id);
                 }
             }
+            #[cfg(feature = "cheap_dragging")]{
+                if let Some(id) = self.picked_up {
+                    self.clear_rels(&id);
+                }
+            }
         }
 
         if is_mouse_button_released(MouseButton::Left) {
-            self.picked_up = None
+            #[cfg(feature = "cheap_dragging")]{
+                if let Some(id) = self.picked_up {
+                    self.calc_rels(&id);
+                }
+            }
+            if let Some(_) = self.picked_up {
+                self.picked_up = None;
+            }
         }
 
         if is_mouse_button_down(MouseButton::Left) {
             if let Some(id) = self.picked_up {
-                self.clear_rels(&id);
-                self.calc_rels(&id);
+
+                #[cfg(not(feature = "cheap_dragging"))]
+                {
+                    self.clear_rels(&id);
+                    self.calc_rels(&id);
+                }
                 
                 let node = self.nodes.get_mut(&id).unwrap();
                 node.x = mouse_pos.0 as f64;
@@ -153,7 +168,7 @@ impl<'a> Graph {
     }
 }
 
-use std::{time::Instant, ops::Index};
+use std::time::Instant;
 #[macroquad::main("eNeRGy")]
 async fn main() {
     //let mut graph = Graph{ nodes: vec![ [0.4, 0.5].into(), [0.5, 0.4].into(), [0.6, 0.5].into(), [0.5, 0.6].into() ] };
@@ -161,9 +176,9 @@ async fn main() {
     loop {
         graph.handle_dragging();
 
-        let now = Instant::now();
+        //let now = Instant::now();
         graph.draw_relationships();
-        println!("{:?}", now.elapsed());
+        //println!("{:?}", now.elapsed());
         graph.draw_nodes();
 
         if is_mouse_button_pressed(MouseButton::Right) {
