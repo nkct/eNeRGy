@@ -4,9 +4,9 @@ use macroquad::prelude::*;
 use rayon::prelude::*;
 use std::collections::HashMap;
 
-const NODE_NUM: u32 = 100;
+const NODE_NUM: usize = 100000;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct Node {
     x: f64,
     y: f64,
@@ -23,6 +23,13 @@ impl Node {
     const MAX_DIST: f64 = std::f64::consts::SQRT_2;
     const MAX_VIXIBLE_DIST: Option<f64> = None;
     const SIZE: Option<f32> = None;
+
+    fn random() -> Self{
+        [
+            macroquad::rand::rand() as f64 / std::u32::MAX as f64, 
+            macroquad::rand::rand() as f64 / std::u32::MAX as f64,
+        ].into()
+    }
 
     fn get_size() -> f32 {
         if let Some(value) = Node::SIZE  {
@@ -42,6 +49,16 @@ impl Node {
 
     fn distance(n1: &Node, n2: &Node) -> f64 {
         ((n1.x - n2.x).powi(2) + (n1.y - n2.y).powi(2)).sqrt()
+    }
+
+    fn relationship_intensity(n1: &Node, n2: &Node) -> f64 {
+        let max_visible_dist = Node::get_max_visible_dist();
+        let dist = Node::distance(n1, n2,);
+
+        let relative_dist = (Node::MAX_DIST - dist) / Node::MAX_DIST;
+        let rel_intensity = ((relative_dist - (1. - max_visible_dist)).clamp(0., 1.)) / max_visible_dist;
+
+        return rel_intensity;
     }
 
     fn draw_node(&self) {
@@ -76,10 +93,13 @@ impl<'a> Graph {
         for (other_id, other) in self.nodes.iter() {
             if other_id != node_id {
                 let node = self.nodes.get(&node_id).unwrap();
+
                 let max_visible_dist = Node::get_max_visible_dist();
                 let dist = Node::distance(&node, other,);
+
                 let relative_dist = (Node::MAX_DIST - dist) / Node::MAX_DIST;
                 let rel_intensity = ((relative_dist - (1. - max_visible_dist)).clamp(0., 1.)) / max_visible_dist;
+
                 if dist < max_visible_dist {
                     self.relationships.push((*node_id, *other_id, rel_intensity))
                 }
@@ -112,7 +132,7 @@ impl<'a> Graph {
         }
     }
 
-    fn populate_random(count: u32) -> Self {
+    fn populate_random(count: usize) -> Self {
         let mut graph = Graph::new();
 
         for _ in 0..count {
@@ -121,6 +141,36 @@ impl<'a> Graph {
                 macroquad::rand::rand() as f64 / std::u32::MAX as f64,
             ])
         }
+
+        return graph;
+    }
+
+    fn par_populate_random(count: usize) -> Self {
+        let nodes = (0..count).into_par_iter().map(|id| (id, Node::random()) ).collect::<HashMap<usize, Node>>();
+
+        let rel_ids = (0..count).into_par_iter().flat_map(|node_id| { 
+            ((node_id + 1)..count).into_par_iter().filter_map(|other_id| {
+                if Node::distance(nodes.get(&node_id).unwrap(), nodes.get(&other_id).unwrap()) < Node::get_max_visible_dist() {
+                    Some((node_id, other_id))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<(usize, usize)>>()
+        }).collect::<Vec<(usize, usize)>>();
+
+        //println!("{:?}", rel_ids);
+
+        let rels = rel_ids.into_par_iter().map(|(node_id, other_id)| {
+            (node_id, other_id, Node::relationship_intensity(nodes.get(&node_id).unwrap(), nodes.get(&other_id).unwrap()))
+        }).collect::<Vec<(usize, usize, f64)>>();
+
+        let graph = Graph { 
+            nodes, 
+            node_count: count, 
+            relationships: rels, 
+            picked_up: None, 
+        };
 
         return graph;
     }
@@ -168,15 +218,16 @@ impl<'a> Graph {
     }
 }
 
-use std::time::Instant;
 #[macroquad::main("eNeRGy")]
 async fn main() {
     //let mut graph = Graph{ nodes: vec![ [0.4, 0.5].into(), [0.5, 0.4].into(), [0.6, 0.5].into(), [0.5, 0.6].into() ] };
-    let mut graph = Graph::populate_random(NODE_NUM);
+    let now = std::time::Instant::now();
+    let mut graph = Graph::par_populate_random(NODE_NUM);
+    println!("{:?}", now.elapsed());
     loop {
         graph.handle_dragging();
 
-        //let now = Instant::now();
+        //let now = std::time::Instant::now();
         graph.draw_relationships();
         //println!("{:?}", now.elapsed());
         graph.draw_nodes();
