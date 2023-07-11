@@ -3,7 +3,7 @@ eNeRGy is a Node Relationship Graphing tool. Used to represent relationships bet
 
 ![eNeRGy 1000 Nodes!](eNeRGy_screenshot_1000_nodes.png "eNeRGy 1000 Nodes")
 
-It is written in rust. The rendering library used is [macroquad](https://macroquad.rs)
+It is written in rust. The rendering library used is [macroquad](https://macroquad.rs).  
 This project focuses on performance and efficiency to be able to handle as much data as possible.
 
 ## Usage:
@@ -20,7 +20,7 @@ Here is an example way to complete the above steps:
 `$ cd ./eNeRGy`  
 `$ cargo run --release`  
 
-The `NODE_NUM` variable at the top of `main.rs` controls the ammount of nodes generated. It is reccomended to not go above 1000, as that might take an excruciatingly long time.
+The `NODE_NUM` variable at the top of `main.rs` controls the ammount of nodes generated. It is reccomended to not go above 1000, as that might take an excruciatingly long time.  
 Building with the `cheap_dragging` feature should result in less computationally intensive dragging of nodes. At the cost of less impressive visuals.
 
 ## Contributions:
